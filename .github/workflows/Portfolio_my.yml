@@ -11,7 +11,9 @@ permissions:
   
 jobs:
     deploy:
-        runs-on: ubuntu-lates
+        runs-on: ubuntu-latest
+
+
 
         environment:
             name: github-pages
@@ -19,10 +21,10 @@ jobs:
  
         steps:
             - name: checkout code
-              uses: action/checkout@v4
+              uses: actions/checkout@v4
             
             - name: Setup GitHub Pages
-              uses: actions/configurepages@v4
+              uses: actions/configure-pages@v4
 
             - name: Upload Static files
               uses: actions/upload-pages-artifact@v4
@@ -30,6 +32,6 @@ jobs:
                 path: "."
               
             - name: Deploy to Github pages
-              uses: actions/deploy@v4    
+              uses: actions/deploy-pages@v4    
 
 
