@@ -1,9 +1,23 @@
+Haan, ye raha **complete updated code**. Isme voice se same item/name multiple baar aane ki problem ko handle kiya hai:
+
+* Repeated speech chunks remove
+* Overlapping transcript merge
+* Same consecutive words remove (`आलू आलू` → `आलू`)
+* Same complete phrase repeat hone se bachav
+
+Purani file ki jagah isse **poora code copy-paste** kar do. 
+
+# Updated Voice Calculator Code
+
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>आवाज़ कैलकुलेटर</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -36,6 +50,7 @@
       text-align: center;
       letter-spacing: 0.5px;
     }
+
     .header-subtitle {
       color: #B8C7B8;
       font-size: 15px;
@@ -50,13 +65,15 @@
       align-items: center;
       margin-bottom: 20px;
     }
+
     .mic-button {
       width: 110px;
       height: 110px;
       border-radius: 50%;
       background: radial-gradient(circle, #C04134 0%, #7E1E14 100%);
       border: 4px solid #489AB0;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 2px 6px rgba(255,255,255,0.3);
+      box-shadow: 0 0 15px rgba(0,0,0,0.5),
+                  inset 0 2px 6px rgba(255,255,255,0.3);
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -66,6 +83,7 @@
       -webkit-user-select: none;
       touch-action: none;
     }
+
     .mic-button.listening {
       transform: scale(1.08);
       background: radial-gradient(circle, #E63929 0%, #A81B0F 100%);
@@ -73,16 +91,19 @@
       box-shadow: 0 0 30px rgba(85, 214, 242, 0.8);
       animation: pulse 1.5s infinite;
     }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.06); }
       100% { transform: scale(1); }
     }
+
     .mic-icon {
       width: 48px;
       height: 48px;
       pointer-events: none;
     }
+
     .mic-label {
       color: #E6EAE6;
       font-size: 15px;
@@ -115,12 +136,14 @@
       position: relative;
       box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
+
     .parchi-title {
       text-align: center;
       font-size: 20px;
       font-weight: bold;
       color: #242B24;
     }
+
     .parchi-date {
       text-align: center;
       font-size: 13px;
@@ -128,6 +151,7 @@
       margin-top: 4px;
       margin-bottom: 12px;
     }
+
     .receipt-divider {
       border-bottom: 2px dashed #C3B49E;
       margin: 12px 0;
@@ -142,6 +166,7 @@
       max-height: 280px;
       overflow-y: auto;
     }
+
     .item-row {
       display: flex;
       align-items: center;
@@ -150,33 +175,39 @@
       font-weight: bold;
       color: #1A1A1A;
     }
+
     .item-name {
       display: flex;
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
     }
+
     .dotted-lead {
       flex-grow: 1;
       border-bottom: 1.5px dotted #B9AA94;
       margin: 0 8px;
       height: 12px;
     }
+
     .item-price-section {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-shrink: 0;
     }
+
     .currency-symbol {
       color: #262626;
       font-weight: normal;
     }
+
     .item-price-val {
       min-width: 35px;
       text-align: right;
       cursor: pointer;
     }
+
     .delete-item-btn {
       color: #C07065;
       font-size: 18px;
@@ -192,11 +223,13 @@
       margin-top: 10px;
       padding-bottom: 10px;
     }
+
     .total-title {
       font-size: 16px;
       font-weight: bold;
       color: #8C3122;
     }
+
     .total-amount {
       font-size: 28px;
       font-weight: 900;
@@ -230,6 +263,7 @@
       box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
       transition: transform 0.1s ease, background-color 0.15s ease;
     }
+
     .btn-whatsapp:active {
       transform: scale(0.98);
       background-color: #20BA5A;
@@ -242,6 +276,7 @@
       width: 100%;
       margin-bottom: 12px;
     }
+
     .btn-action {
       background-color: transparent;
       border: 1px solid #335948;
@@ -257,6 +292,7 @@
       cursor: pointer;
       transition: background 0.15s ease;
     }
+
     .btn-action:active {
       background-color: #1F4535;
     }
@@ -268,416 +304,1691 @@
     }
   </style>
 </head>
+
 <body>
 
 <div class="app-container">
+
   <div class="header-title">आवाज़ कैलकुलेटर</div>
   <div class="header-subtitle">बोलिए भाव, बन जाएगी परची</div>
 
   <div class="mic-wrapper">
+
     <div class="mic-button" id="micBtn">
+
       <svg class="mic-icon" viewBox="0 0 24 24" fill="#FFFFFF">
         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
         <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
       </svg>
+
     </div>
-    <div class="mic-label" id="micLabel">दबाकर रखें और बोलें</div>
+
+    <div class="mic-label" id="micLabel">
+      दबाकर रखें और बोलें
+    </div>
+
   </div>
 
-  <div class="transcript-box" id="transcriptBox">"दबाकर रखें और बोलना शुरू करें..."</div>
+  <div class="transcript-box" id="transcriptBox">
+    "दबाकर रखें और बोलना शुरू करें..."
+  </div>
 
   <div class="parchi-card">
+
     <div class="parchi-title">॥ डिजिटल परची ॥</div>
+
     <div class="parchi-date" id="currentDate"></div>
+
     <div class="receipt-divider"></div>
 
     <ul class="items-container" id="itemsList"></ul>
 
     <div class="receipt-divider"></div>
+
     <div class="total-section">
-      <div class="total-title">कुल — TOTAL</div>
-      <div class="total-amount" id="totalAmount">₹0</div>
+
+      <div class="total-title">
+        कुल — TOTAL
+      </div>
+
+      <div class="total-amount" id="totalAmount">
+        ₹0
+      </div>
+
     </div>
+
   </div>
+
   <div class="zigzag-bottom"></div>
 
   <button class="btn-whatsapp" onclick="sendToWhatsApp()">
+
     <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
       <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
     </svg>
+
     WhatsApp पर भेजें
+
   </button>
 
   <div class="actions-grid">
+
     <button class="btn-action" onclick="resetParcha()">
       <span>🧾</span> नया परचा
     </button>
+
     <button class="btn-action" onclick="manualTypeItem()">
       <span>⌨️</span> टाइप करें
     </button>
+
   </div>
 
-  <div class="footer-help-text">रकम पर टैप कर के ठीक भी कर सकते हैं</div>
+  <div class="footer-help-text">
+    रकम पर टैप कर के ठीक भी कर सकते हैं
+  </div>
+
 </div>
 
+
 <script>
-  let isListening = false;
-  let items = [];
-  let capturedPhrases = []; // Strictly non-duplicating segment accumulator
-  let recognition = null;
 
-  const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
-  const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
-  document.getElementById('currentDate').innerText = formattedDate;
+let isListening = false;
+let items = [];
+let capturedPhrases = [];
+let recognition = null;
 
-  // Single-Chunk Engine (Guarantees zero repeat loops in Mobile Chrome)
-  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
 
-    recognition.onresult = (event) => {
-      if (event.results && event.results.length > 0) {
-        let chunk = event.results[0][0].transcript.trim();
-        // Avoid adding the exact same duplicate string back-to-back
-        if (chunk && (capturedPhrases.length === 0 || capturedPhrases[capturedPhrases.length - 1] !== chunk)) {
-          capturedPhrases.push(chunk);
-          document.getElementById('transcriptBox').innerText = `"${capturedPhrases.join(' ')}"`;
-        }
-      }
-    };
+/* DATE */
 
-    recognition.onerror = (e) => {
-      console.log("Speech Error:", e.error);
-    };
+const dateOptions = {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric'
+};
 
-    recognition.onend = () => {
-      // If mic is still held down, seamlessly restart for the next item
-      if (isListening) {
-        try {
-          recognition.start();
-        } catch(err) {}
-      }
-    };
+const formattedDate =
+  new Date().toLocaleDateString('hi-IN', dateOptions);
+
+document.getElementById('currentDate').innerText =
+  formattedDate;
+
+
+/* ===========================
+   DUPLICATE VOICE FIX
+=========================== */
+
+function normalizeVoiceText(text) {
+
+  return text
+    .trim()
+    .replace(/[.,!?।]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+}
+
+
+/* Merge overlapping voice chunks */
+
+function mergeVoiceChunk(oldText, newText) {
+
+  const oldWords =
+    normalizeVoiceText(oldText)
+      .split(' ')
+      .filter(Boolean);
+
+  const newWords =
+    normalizeVoiceText(newText)
+      .split(' ')
+      .filter(Boolean);
+
+
+  if (oldWords.length === 0) {
+    return newText.trim();
   }
 
-  const micBtn = document.getElementById('micBtn');
-  const micLabel = document.getElementById('micLabel');
 
-  function startHold(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (isListening) return;
+  const oldNormalized =
+    oldWords.join(' ');
 
-    isListening = true;
-    capturedPhrases = [];
-    micBtn.classList.add('listening');
-    micLabel.innerText = "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
-    document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
+  const newNormalized =
+    newWords.join(' ');
 
-    try {
-      recognition.start();
-    } catch (err) {
-      console.log(err);
-    }
+
+  /* New text already exists */
+
+  if (oldNormalized.includes(newNormalized)) {
+    return oldText;
   }
 
-  function stopHold(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+
+  /* Old text already exists inside new text */
+
+  if (newNormalized.includes(oldNormalized)) {
+    return newText;
+  }
+
+
+  /* Find overlapping words */
+
+  const maxOverlap =
+    Math.min(oldWords.length, newWords.length);
+
+  let overlap = 0;
+
+
+  for (
+    let size = maxOverlap;
+    size >= 1;
+    size--
+  ) {
+
+    const oldEnd =
+      oldWords
+        .slice(-size)
+        .join(' ');
+
+    const newStart =
+      newWords
+        .slice(0, size)
+        .join(' ');
+
+
+    if (oldEnd === newStart) {
+
+      overlap = size;
+
+      break;
+
     }
-    if (!isListening) return;
 
-    isListening = false;
-    micBtn.classList.remove('listening');
-    micLabel.innerText = "दबाकर रखें और बोलें";
+  }
 
-    try {
-      recognition.stop();
-    } catch (err) {
-      console.log(err);
-    }
 
-    // List generates ONLY on finger release
-    setTimeout(() => {
-      let finalSentence = capturedPhrases.join(' ').trim();
-      if (finalSentence && finalSentence !== "सुन रहे हैं...") {
-        processVoiceSmart(finalSentence);
+  const mergedWords = [
+
+    ...oldWords,
+
+    ...newWords.slice(overlap)
+
+  ];
+
+
+  return mergedWords.join(' ');
+
+}
+
+
+/* Remove repeated consecutive words */
+
+function removeDuplicateNameWords(words) {
+
+  return words.filter(
+    (word, index, array) => {
+
+      if (index === 0) {
+        return true;
       }
-    }, 350);
-  }
 
-  micBtn.addEventListener('mousedown', startHold);
-  window.addEventListener('mouseup', () => { if (isListening) stopHold(); });
+      return (
+        word.toLowerCase() !==
+        array[index - 1].toLowerCase()
+      );
 
-  micBtn.addEventListener('touchstart', startHold, { passive: false });
-  window.addEventListener('touchend', (e) => { if (isListening) stopHold(e); }, { passive: false });
-  window.addEventListener('touchcancel', (e) => { if (isListening) stopHold(e); }, { passive: false });
+    }
+  );
 
-  const HINDI_NUMS = {
-    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
-    "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
-    "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15,
-    "सोलह": 16, "सत्रह": 17, "अठारह": 18, "उन्नीस": 19, "बीस": 20,
-    "इक्कीस": 21, "बाईस": 22, "तेईस": 23, "चौबीस": 24, "पच्चीस": 25,
-    "छब्बीस": 26, "सत्ताईस": 27, "अट्ठाइस": 28, "उनतीस": 29, "तीस": 30,
-    "इकतीस": 31, "बत्तीस": 32, "तैंतीस": 33, "चौंतीस": 34, "पैंतीस": 35,
-    "छत्तीस": 36, "सैंतीस": 37, "अड़तीस": 38, "उनतालीस": 39, "चालीस": 40,
-    "इकतालीस": 41, "बयालीस": 42, "तैंतालीस": 43, "चवालीस": 44, "पैंतालीस": 45,
-    "छियालीस": 46, "सैंतालीस": 47, "अड़तालीस": 48, "उनचास": 49, "पचास": 50,
-    "इक्यावन": 51, "बावन": 52, "तिरेपन": 53, "चौवन": 54, "पचपन": 55,
-    "छप्पन": 56, "सत्तावन": 57, "अट्ठावन": 58, "उनसठ": 59, "साठ": 60,
-    "इकसठ": 61, "बासठ": 62, "तिरेसठ": 63, "चौंसठ": 64, "पैंसठ": 65,
-    "छियासठ": 66, "सरसठ": 67, "अड़सठ": 68, "उनहत्तर": 69, "सत्तर": 70,
-    "इकहत्तर": 71, "बहत्तर": 72, "तिहत्तर": 73, "चौहत्तर": 74, "पचहत्तर": 75,
-    "छिहत्तर": 76, "सतहत्तर": 77, "अठहत्तर": 78, "उन्नासी": 79, "अस्सी": 80,
-    "इक्यासी": 81, "बयासी": 82, "तिरासी": 83, "चौरासी": 84, "पचासी": 85,
-    "छियासी": 86, "सत्तासी": 87, "अट्ठासी": 88, "नवासी": 89, "नब्बे": 90,
-    "इक्यानवे": 91, "बानवे": 92, "तिरानवे": 93, "चौरानवे": 94, "पंचानवे": 95,
-    "छियानवे": 96, "सत्तानवे": 97, "अट्ठानवे": 98, "निन्यानवे": 99, "सौ": 100,
-    "डेढ़": 1.5, "ढाई": 2.5, "आधा": 0.5, "सवा": 1.25, "पौना": 0.75, "पौने": 0.75
+}
+
+
+/* ===========================
+   SPEECH RECOGNITION
+=========================== */
+
+if (
+  'webkitSpeechRecognition' in window ||
+  'SpeechRecognition' in window
+) {
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  recognition =
+    new SpeechRecognition();
+
+
+  recognition.lang = 'hi-IN';
+
+  recognition.continuous = false;
+
+  recognition.interimResults = false;
+
+
+  recognition.onresult = (event) => {
+
+    if (
+      !event.results ||
+      event.results.length === 0
+    ) {
+      return;
+    }
+
+
+    let chunk =
+      event.results[0][0]
+        .transcript
+        .trim();
+
+
+    if (!chunk) {
+      return;
+    }
+
+
+    /* First chunk */
+
+    if (
+      capturedPhrases.length === 0
+    ) {
+
+      capturedPhrases.push(chunk);
+
+    }
+
+
+    /* Merge next voice chunks */
+
+    else {
+
+      let oldText =
+        capturedPhrases.join(' ');
+
+
+      let mergedText =
+        mergeVoiceChunk(
+          oldText,
+          chunk
+        );
+
+
+      capturedPhrases = [
+        mergedText
+      ];
+
+    }
+
+
+    document
+      .getElementById(
+        'transcriptBox'
+      )
+      .innerText =
+        `"${capturedPhrases.join(' ')}"`;
+
   };
 
-  const CORRECTIONS = {
-    "तुरंत दाल": "तूर दाल", "तुवर दाल": "तूर दाल",
-    "नामक": "नमक", "badam": "बादाम", "jira": "जीरा", "alu": "आलू",
-    "दुनिया की पट्टी": "धनिया पत्ती", "धनिया की पट्टी": "धनिया पत्ती", "धनिया पत्ती": "धनिया पत्ती"
+
+  recognition.onerror = (e) => {
+
+    console.log(
+      "Speech Error:",
+      e.error
+    );
+
   };
 
-  const STOP_WORDS = new Set([
-    "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
-  ]);
 
-  // Clean Sequential Multi-Item Parser
-  function processVoiceSmart(text) {
-    let clean = text.replace(/₹/g, ' ₹ ');
+  recognition.onend = () => {
 
-    for (let [k, v] of Object.entries(HINDI_NUMS)) {
-      clean = clean.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
+    /* Restart while mic is held */
+
+    if (isListening) {
+
+      try {
+
+        recognition.start();
+
+      }
+
+      catch (err) {
+
+        console.log(err);
+
+      }
+
     }
-    for (let [k, v] of Object.entries(CORRECTIONS)) {
-      clean = clean.replace(new RegExp(k, 'gi'), v);
+
+  };
+
+}
+
+
+/* ===========================
+   MICROPHONE BUTTON
+=========================== */
+
+const micBtn =
+  document.getElementById('micBtn');
+
+
+const micLabel =
+  document.getElementById('micLabel');
+
+
+function startHold(e) {
+
+  if (e) {
+
+    e.preventDefault();
+
+    e.stopPropagation();
+
+  }
+
+
+  if (isListening) {
+
+    return;
+
+  }
+
+
+  isListening = true;
+
+  capturedPhrases = [];
+
+
+  micBtn.classList.add(
+    'listening'
+  );
+
+
+  micLabel.innerText =
+    "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
+
+
+  document
+    .getElementById(
+      'transcriptBox'
+    )
+    .innerText =
+      "सुन रहे हैं...";
+
+
+  try {
+
+    recognition.start();
+
+  }
+
+  catch (err) {
+
+    console.log(err);
+
+  }
+
+}
+
+
+function stopHold(e) {
+
+  if (e) {
+
+    e.preventDefault();
+
+    e.stopPropagation();
+
+  }
+
+
+  if (!isListening) {
+
+    return;
+
+  }
+
+
+  isListening = false;
+
+
+  micBtn.classList.remove(
+    'listening'
+  );
+
+
+  micLabel.innerText =
+    "दबाकर रखें और बोलें";
+
+
+  try {
+
+    recognition.stop();
+
+  }
+
+  catch (err) {
+
+    console.log(err);
+
+  }
+
+
+  setTimeout(() => {
+
+    let finalSentence =
+      capturedPhrases
+        .join(' ')
+        .trim();
+
+
+    if (
+      finalSentence &&
+      finalSentence !==
+        "सुन रहे हैं..."
+    ) {
+
+      processVoiceSmart(
+        finalSentence
+      );
+
     }
 
-    let tokens = clean.split(/\s+/).filter(Boolean);
-    let parsedList = [];
+  }, 500);
 
-    let currentNameWords = [];
-    let currentQty = "";
-    let currentQtyVal = 1;
-    let unitRegex = /^(किलो|kg|kilo|लीटर|ltr|दर्जन|पैकेट|packet|पीस|ग्राम|gm|gram)$/i;
+}
 
-    let i = 0;
-    while (i < tokens.length) {
-      let t = tokens[i];
-      let cleanT = t.replace(/[₹,]/g, '').trim();
-      let num = parseFloat(cleanT);
 
-      // 1. Quantity Detection
-      if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
-        currentQtyVal = num;
-        currentQty = `${num} ${tokens[i + 1]}`;
-        i += 2;
-        continue;
-      } 
-      // 2. Price / Rate Detection
-      else if (!isNaN(num) && cleanT !== "") {
-        let priceVal = num;
+/* MOUSE */
 
-        if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
-          i++;
-        }
+micBtn.addEventListener(
+  'mousedown',
+  startHold
+);
 
-        let filteredWords = currentNameWords.filter(w => !STOP_WORDS.has(w.toLowerCase()) && !unitRegex.test(w) && w !== "₹");
-        let name = filteredWords.join(' ').trim() || "सामान";
 
-        let finalPrice = priceVal;
-        if (currentQty && priceVal > 0) {
-          if (currentQty.includes("ग्राम") || currentQty.includes("gm")) {
-            if (priceVal >= 100) {
-              finalPrice = (currentQtyVal / 1000) * priceVal;
-            } else {
-              finalPrice = priceVal;
-            }
-          } else {
-            finalPrice = currentQtyVal * priceVal;
+window.addEventListener(
+  'mouseup',
+  () => {
+
+    if (isListening) {
+
+      stopHold();
+
+    }
+
+  }
+);
+
+
+/* TOUCH */
+
+micBtn.addEventListener(
+  'touchstart',
+  startHold,
+  {
+    passive: false
+  }
+);
+
+
+window.addEventListener(
+  'touchend',
+  (e) => {
+
+    if (isListening) {
+
+      stopHold(e);
+
+    }
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+window.addEventListener(
+  'touchcancel',
+  (e) => {
+
+    if (isListening) {
+
+      stopHold(e);
+
+    }
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+/* ===========================
+   HINDI NUMBERS
+=========================== */
+
+const HINDI_NUMS = {
+
+  "एक": 1,
+  "दो": 2,
+  "तीन": 3,
+  "चार": 4,
+  "पांच": 5,
+  "पाँच": 5,
+  "छह": 6,
+  "सात": 7,
+  "आठ": 8,
+  "नौ": 9,
+  "दस": 10,
+
+  "ग्यारह": 11,
+  "बारह": 12,
+  "तेरह": 13,
+  "चौदह": 14,
+  "पंद्रह": 15,
+
+  "सोलह": 16,
+  "सत्रह": 17,
+  "अठारह": 18,
+  "उन्नीस": 19,
+  "बीस": 20,
+
+  "इक्कीस": 21,
+  "बाईस": 22,
+  "तेईस": 23,
+  "चौबीस": 24,
+  "पच्चीस": 25,
+
+  "छब्बीस": 26,
+  "सत्ताईस": 27,
+  "अट्ठाइस": 28,
+  "उनतीस": 29,
+  "तीस": 30,
+
+  "इकतीस": 31,
+  "बत्तीस": 32,
+  "तैंतीस": 33,
+  "चौंतीस": 34,
+  "पैंतीस": 35,
+
+  "छत्तीस": 36,
+  "सैंतीस": 37,
+  "अड़तीस": 38,
+  "उनतालीस": 39,
+  "चालीस": 40,
+
+  "इकतालीस": 41,
+  "बयालीस": 42,
+  "तैंतालीस": 43,
+  "चवालीस": 44,
+  "पैंतालीस": 45,
+
+  "छियालीस": 46,
+  "सैंतालीस": 47,
+  "अड़तालीस": 48,
+  "उनचास": 49,
+  "पचास": 50,
+
+  "इक्यावन": 51,
+  "बावन": 52,
+  "तिरेपन": 53,
+  "चौवन": 54,
+  "पचपन": 55,
+
+  "छप्पन": 56,
+  "सत्तावन": 57,
+  "उनसठ": 59,
+  "साठ": 60,
+
+  "इकसठ": 61,
+  "बासठ": 62,
+  "तिरेसठ": 63,
+  "चौंसठ": 64,
+  "पैंसठ": 65,
+
+  "छियासठ": 66,
+  "सरसठ": 67,
+  "अड़सठ": 68,
+  "उनहत्तर": 69,
+  "सत्तर": 70,
+
+  "इकहत्तर": 71,
+  "बहत्तर": 72,
+  "तिहत्तर": 73,
+  "चौहत्तर": 74,
+  "पचहत्तर": 75,
+
+  "छिहत्तर": 76,
+  "सतहत्तर": 77,
+  "अठहत्तर": 78,
+  "उन्नासी": 79,
+  "अस्सी": 80,
+
+  "इक्यासी": 81,
+  "बयासी": 82,
+  "तिरासी": 83,
+  "चौरासी": 84,
+  "पचासी": 85,
+
+  "छियासी": 86,
+  "सत्तासी": 87,
+  "अट्ठासी": 88,
+  "नवासी": 89,
+  "नब्बे": 90,
+
+  "इक्यानवे": 91,
+  "बानवे": 92,
+  "तिरानवे": 93,
+  "चौरानवे": 94,
+  "पंचानवे": 95,
+
+  "छियानवे": 96,
+  "सत्तानवे": 97,
+  "निन्यानवे": 99,
+  "सौ": 100,
+
+  "डेढ़": 1.5,
+  "ढाई": 2.5,
+  "आधा": 0.5,
+  "सवा": 1.25,
+  "पौना": 0.75,
+  "पौने": 0.75
+
+};
+
+
+/* ===========================
+   WORD CORRECTIONS
+=========================== */
+
+const CORRECTIONS = {
+
+  "तुरंत दाल": "तूर दाल",
+
+  "तुवर दाल": "तूर दाल",
+
+  "नामक": "नमक",
+
+  "badam": "बादाम",
+
+  "jira": "जीरा",
+
+  "alu": "आलू",
+
+  "दुनिया की पट्टी":
+    "धनिया पत्ती",
+
+  "धनिया की पट्टी":
+    "धनिया पत्ती"
+
+};
+
+
+/* ===========================
+   STOP WORDS
+=========================== */
+
+const STOP_WORDS = new Set([
+
+  "का",
+  "की",
+  "के",
+  "को",
+  "से",
+  "में",
+
+  "रुपए",
+  "रुपये",
+  "रु",
+  "rs",
+  "rupee",
+  "rupees",
+
+  "hai",
+  "h",
+  "aur",
+  "और",
+  "bhi",
+  "भी"
+
+]);
+
+
+/* ===========================
+   VOICE PARSER
+=========================== */
+
+function processVoiceSmart(text) {
+
+  let clean =
+    text.replace(
+      /₹/g,
+      ' ₹ '
+    );
+
+
+  /* Hindi numbers */
+
+  for (
+    let [k, v]
+    of Object.entries(HINDI_NUMS)
+  ) {
+
+    clean =
+      clean.replace(
+        new RegExp(
+          `\\b${k}\\b`,
+          'gi'
+        ),
+        v
+      );
+
+  }
+
+
+  /* Corrections */
+
+  for (
+    let [k, v]
+    of Object.entries(CORRECTIONS)
+  ) {
+
+    clean =
+      clean.replace(
+        new RegExp(
+          k,
+          'gi'
+        ),
+        v
+      );
+
+  }
+
+
+  let tokens =
+    clean
+      .split(/\s+/)
+      .filter(Boolean);
+
+
+  let parsedList = [];
+
+
+  let currentNameWords = [];
+
+  let currentQty = "";
+
+  let currentQtyVal = 1;
+
+
+  let unitRegex =
+    /^(किलो|kg|kilo|लीटर|ltr|दर्जन|पैकेट|packet|पीस|ग्राम|gm|gram)$/i;
+
+
+  let i = 0;
+
+
+  while (
+    i < tokens.length
+  ) {
+
+    let t =
+      tokens[i];
+
+
+    let cleanT =
+      t.replace(
+        /[₹,]/g,
+        ''
+      )
+      .trim();
+
+
+    let num =
+      parseFloat(cleanT);
+
+
+    /* Quantity */
+
+    if (
+
+      !isNaN(num) &&
+
+      i + 1 < tokens.length &&
+
+      unitRegex.test(
+        tokens[i + 1]
+      )
+
+    ) {
+
+      currentQtyVal =
+        num;
+
+
+      currentQty =
+        `${num} ${tokens[i + 1]}`;
+
+
+      i += 2;
+
+      continue;
+
+    }
+
+
+    /* Price */
+
+    else if (
+
+      !isNaN(num) &&
+
+      cleanT !== ""
+
+    ) {
+
+      let priceVal =
+        num;
+
+
+      if (
+
+        i + 1 <
+          tokens.length &&
+
+        /^(रुपए|रुपये|रु|rs|rupees)$/i
+          .test(
+            tokens[i + 1]
+          )
+
+      ) {
+
+        i++;
+
+      }
+
+
+      let filteredWords =
+        currentNameWords.filter(
+
+          w =>
+
+            !STOP_WORDS.has(
+              w.toLowerCase()
+            )
+
+            &&
+
+            !unitRegex.test(w)
+
+            &&
+
+            w !== "₹"
+
+        );
+
+
+      /* IMPORTANT:
+         Remove duplicate item names
+      */
+
+      filteredWords =
+        removeDuplicateNameWords(
+          filteredWords
+        );
+
+
+      let name =
+        filteredWords
+          .join(' ')
+          .trim()
+
+        ||
+
+        "सामान";
+
+
+      let finalPrice =
+        priceVal;
+
+
+      if (
+
+        currentQty &&
+
+        priceVal > 0
+
+      ) {
+
+        if (
+
+          currentQty.includes(
+            "ग्राम"
+          )
+
+          ||
+
+          currentQty.includes(
+            "gm"
+          )
+
+        ) {
+
+          if (
+            priceVal >= 100
+          ) {
+
+            finalPrice =
+              (
+                currentQtyVal /
+                1000
+              )
+              *
+              priceVal;
+
           }
+
+          else {
+
+            finalPrice =
+              priceVal;
+
+          }
+
         }
 
-        parsedList.push({
-          item: name,
-          quantity: currentQty,
-          price: parseFloat(finalPrice.toFixed(2))
-        });
+        else {
 
-        currentNameWords = [];
-        currentQty = "";
-        currentQtyVal = 1;
-      } 
-      // 3. Name Word
-      else {
-        if (t !== "₹") {
-          currentNameWords.push(t);
+          finalPrice =
+            currentQtyVal *
+            priceVal;
+
         }
+
       }
-      i++;
-    }
 
-    let remainingWords = currentNameWords.filter(w => !STOP_WORDS.has(w.toLowerCase()) && !unitRegex.test(w) && w !== "₹");
-    if (remainingWords.length > 0) {
+
       parsedList.push({
-        item: remainingWords.join(' ').trim(),
-        quantity: currentQty,
-        price: 0
+
+        item:
+          name,
+
+        quantity:
+          currentQty,
+
+        price:
+          parseFloat(
+            finalPrice.toFixed(2)
+          )
+
       });
+
+
+      currentNameWords = [];
+
+      currentQty = "";
+
+      currentQtyVal = 1;
+
     }
 
-    if (parsedList.length > 0) {
-      items = parsedList;
-      renderParchi();
-    }
-  }
 
-  function renderParchi() {
-    const listEl = document.getElementById('itemsList');
-    listEl.innerHTML = '';
-    let total = 0;
+    /* Name */
 
-    items.forEach((it, idx) => {
-      total += it.price;
-      const li = document.createElement('li');
-      li.className = 'item-row';
-      li.innerHTML = `
-        <div class="item-name">
-          <span>${it.item}</span>
-          ${it.quantity ? `<span style="font-size:13px; font-weight:normal; color:#4A5568; margin-left:4px;">(${it.quantity})</span>` : ''}
-        </div>
-        <div class="dotted-lead"></div>
-        <div class="item-price-section">
-          <span class="currency-symbol">₹</span>
-          <span class="item-price-val" onclick="editPrice(${idx})">${it.price}</span>
-          <span class="delete-item-btn" onclick="deleteItem(${idx})">✕</span>
-        </div>
-      `;
-      listEl.appendChild(li);
-    });
+    else {
 
-    let formattedTotal = parseFloat(total.toFixed(2));
-    document.getElementById('totalAmount').innerText = `₹${formattedTotal}`;
-  }
+      if (
+        t !== "₹"
+      ) {
 
-  function deleteItem(idx) {
-    items.splice(idx, 1);
-    renderParchi();
-  }
+        currentNameWords.push(
+          t
+        );
 
-  function editPrice(idx) {
-    const newPrice = prompt("नया भाव / Price दर्ज करें:", items[idx].price);
-    if (newPrice !== null && !isNaN(newPrice) && newPrice.trim() !== "") {
-      items[idx].price = parseFloat(parseFloat(newPrice).toFixed(2));
-      renderParchi();
-    }
-  }
-
-  function resetParcha() {
-    items = [];
-    capturedPhrases = [];
-    document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
-    renderParchi();
-  }
-
-  function manualTypeItem() {
-    const name = prompt("सामान का नाम:");
-    if (!name) return;
-    const price = prompt("रकम (Price):");
-    if (!price || isNaN(price)) return;
-
-    items.push({
-      item: name,
-      quantity: "",
-      price: parseFloat(parseFloat(price).toFixed(2))
-    });
-    renderParchi();
-  }
-
-  // Exact Right-Aligned Monospace WhatsApp Delivery
-  function sendToWhatsApp() {
-    if (items.length === 0) {
-      alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
-      return;
-    }
-
-    let phone = prompt("ग्राहक का 10 अंकों का WhatsApp नंबर दर्ज करें:", "");
-    if (!phone) return;
-
-    phone = phone.replace(/\D/g, '');
-
-    if (phone.length === 10) {
-      phone = "91" + phone;
-    } else if (phone.length === 12 && phone.startsWith("91")) {
-      // Valid
-    } else {
-      alert("कृपया सही 10 अंकों का मोबाइल नंबर डालें।");
-      return;
-    }
-
-    let total = items.reduce((sum, it) => sum + it.price, 0);
-    let totalFormatted = parseFloat(total.toFixed(2));
-    const dateStr = document.getElementById('currentDate').innerText;
-
-    let msg = `\`\`\`॥ डिजिटल परची ॥\n`;
-    msg += `${dateStr}\n`;
-    msg += `----------------------------\n`;
-
-    const TOTAL_WIDTH = 28;
-
-    items.forEach((it) => {
-      let cleanItemName = it.item.replace(/\b(भी|का|की|के)\b/gi, '').trim();
-      let qty = it.quantity ? ` (${it.quantity})` : '';
-      let left = `${cleanItemName}${qty}`;
-      let right = `₹ ${it.price}`;
-
-      if (left.length > 18) {
-        left = left.substring(0, 16) + "..";
       }
 
-      let matras = left.match(/[\u093e-\u094f\u0901-\u0903]/g);
-      let visualLen = left.length - (matras ? matras.length * 0.5 : 0);
+    }
 
-      let dotsCount = Math.max(2, Math.round(TOTAL_WIDTH - visualLen - right.length));
-      let dots = ".".repeat(dotsCount);
 
-      msg += `${left} ${dots} ${right}\n`;
+    i++;
+
+  }
+
+
+  /* Remaining words */
+
+  let remainingWords =
+    currentNameWords.filter(
+
+      w =>
+
+        !STOP_WORDS.has(
+          w.toLowerCase()
+        )
+
+        &&
+
+        !unitRegex.test(w)
+
+        &&
+
+        w !== "₹"
+
+    );
+
+
+  remainingWords =
+    removeDuplicateNameWords(
+      remainingWords
+    );
+
+
+  if (
+    remainingWords.length > 0
+  ) {
+
+    parsedList.push({
+
+      item:
+        remainingWords
+          .join(' ')
+          .trim(),
+
+      quantity:
+        currentQty,
+
+      price:
+        0
+
     });
 
-    let totalLeft = "कुल — TOTAL";
-    let totalRight = `₹ ${totalFormatted}`;
-    let totalMatras = totalLeft.match(/[\u093e-\u094f\u0901-\u0903]/g);
-    let totalVisualLen = totalLeft.length - (totalMatras ? totalMatras.length * 0.5 : 0);
-    let totalDotsCount = Math.max(2, Math.round(TOTAL_WIDTH - totalVisualLen - totalRight.length));
-    let totalDots = ".".repeat(totalDotsCount);
-
-    msg += `----------------------------\n`;
-    msg += `${totalLeft} ${totalDots} ${totalRight}\n`;
-    msg += `----------------------------\`\`\`\n\n`;
-    msg += `धन्यवाद! फिर पधारें। 🙏`;
-
-    const encodedMsg = encodeURIComponent(msg);
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const waUrl = isMobile 
-      ? `whatsapp://send?phone=${phone}&text=${encodedMsg}` 
-      : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`;
-
-    window.open(waUrl, '_blank');
   }
+
+
+  if (
+    parsedList.length > 0
+  ) {
+
+    items =
+      parsedList;
+
+
+    renderParchi();
+
+  }
+
+}
+
+
+/* ===========================
+   RENDER PARCHI
+=========================== */
+
+function renderParchi() {
+
+  const listEl =
+    document.getElementById(
+      'itemsList'
+    );
+
+
+  listEl.innerHTML = '';
+
+
+  let total = 0;
+
+
+  items.forEach(
+    (it, idx) => {
+
+      total += it.price;
+
+
+      const li =
+        document.createElement(
+          'li'
+        );
+
+
+      li.className =
+        'item-row';
+
+
+      li.innerHTML = `
+
+        <div class="item-name">
+
+          <span>
+            ${it.item}
+          </span>
+
+          ${
+            it.quantity
+
+              ?
+
+              `<span style="
+                font-size:13px;
+                font-weight:normal;
+                color:#4A5568;
+                margin-left:4px;
+              ">
+                (${it.quantity})
+              </span>`
+
+              :
+
+              ''
+
+          }
+
+        </div>
+
+
+        <div class="dotted-lead"></div>
+
+
+        <div class="item-price-section">
+
+          <span class="currency-symbol">
+            ₹
+          </span>
+
+
+          <span
+            class="item-price-val"
+            onclick="editPrice(${idx})"
+          >
+            ${it.price}
+          </span>
+
+
+          <span
+            class="delete-item-btn"
+            onclick="deleteItem(${idx})"
+          >
+            ✕
+          </span>
+
+        </div>
+
+      `;
+
+
+      listEl.appendChild(
+        li
+      );
+
+    }
+  );
+
+
+  let formattedTotal =
+    parseFloat(
+      total.toFixed(2)
+    );
+
+
+  document
+    .getElementById(
+      'totalAmount'
+    )
+    .innerText =
+      `₹${formattedTotal}`;
+
+}
+
+
+/* ===========================
+   DELETE ITEM
+=========================== */
+
+function deleteItem(idx) {
+
+  items.splice(
+    idx,
+    1
+  );
+
 
   renderParchi();
+
+}
+
+
+/* ===========================
+   EDIT PRICE
+=========================== */
+
+function editPrice(idx) {
+
+  const newPrice =
+    prompt(
+      "नया भाव / Price दर्ज करें:",
+      items[idx].price
+    );
+
+
+  if (
+
+    newPrice !== null &&
+
+    !isNaN(newPrice) &&
+
+    newPrice.trim() !== ""
+
+  ) {
+
+    items[idx].price =
+      parseFloat(
+        parseFloat(
+          newPrice
+        )
+        .toFixed(2)
+      );
+
+
+    renderParchi();
+
+  }
+
+}
+
+
+/* ===========================
+   RESET
+=========================== */
+
+function resetParcha() {
+
+  items = [];
+
+  capturedPhrases = [];
+
+
+  document
+    .getElementById(
+      'transcriptBox'
+    )
+    .innerText =
+      '"दबाकर रखें और बोलना शुरू करें..."';
+
+
+  renderParchi();
+
+}
+
+
+/* ===========================
+   MANUAL ENTRY
+=========================== */
+
+function manualTypeItem() {
+
+  const name =
+    prompt(
+      "सामान का नाम:"
+    );
+
+
+  if (!name) {
+    return;
+  }
+
+
+  const price =
+    prompt(
+      "रकम (Price):"
+    );
+
+
+  if (
+    !price ||
+    isNaN(price)
+  ) {
+    return;
+  }
+
+
+  items.push({
+
+    item:
+      name,
+
+    quantity:
+      "",
+
+    price:
+      parseFloat(
+        parseFloat(price)
+          .toFixed(2)
+      )
+
+  });
+
+
+  renderParchi();
+
+}
+
+
+/* ===========================
+   WHATSAPP
+=========================== */
+
+function sendToWhatsApp() {
+
+  if (
+    items.length === 0
+  ) {
+
+    alert(
+      "परची खाली है! पहले सामान बोलें या दर्ज करें।"
+    );
+
+    return;
+
+  }
+
+
+  let phone =
+    prompt(
+      "ग्राहक का 10 अंकों का WhatsApp नंबर दर्ज करें:",
+      ""
+    );
+
+
+  if (!phone) {
+
+    return;
+
+  }
+
+
+  phone =
+    phone.replace(
+      /\D/g,
+      ''
+    );
+
+
+  if (
+    phone.length === 10
+  ) {
+
+    phone =
+      "91" + phone;
+
+  }
+
+
+  else if (
+
+    phone.length === 12 &&
+
+    phone.startsWith(
+      "91"
+    )
+
+  ) {
+
+    /* Valid */
+
+  }
+
+
+  else {
+
+    alert(
+      "कृपया सही 10 अंकों का मोबाइल नंबर डालें।"
+    );
+
+    return;
+
+  }
+
+
+  let total =
+    items.reduce(
+
+      (sum, it) =>
+        sum + it.price,
+
+      0
+
+    );
+
+
+  let totalFormatted =
+    parseFloat(
+      total.toFixed(2)
+    );
+
+
+  const dateStr =
+    document.getElementById(
+      'currentDate'
+    )
+    .innerText;
+
+
+  let msg =
+    `\`\`\`॥ डिजिटल परची ॥\n`;
+
+
+  msg +=
+    `${dateStr}\n`;
+
+
+  msg +=
+    `----------------------------\n`;
+
+
+  const TOTAL_WIDTH = 28;
+
+
+  items.forEach(
+    (it) => {
+
+      let cleanItemName =
+        it.item
+          .replace(
+            /\b(भी|का|की|के)\b/gi,
+            ''
+          )
+          .trim();
+
+
+      let qty =
+        it.quantity
+          ?
+          ` (${it.quantity})`
+          :
+          '';
+
+
+      let left =
+        `${cleanItemName}${qty}`;
+
+
+      let right =
+        `₹ ${it.price}`;
+
+
+      if (
+        left.length > 18
+      ) {
+
+        left =
+          left.substring(
+            0,
+            16
+          )
+          + "..";
+
+      }
+
+
+      let matras =
+        left.match(
+          /[\u093e-\u094f\u0901-\u0903]/g
+        );
+
+
+      let visualLen =
+        left.length -
+
+        (
+          matras
+            ?
+            matras.length * 0.5
+            :
+            0
+        );
+
+
+      let dotsCount =
+        Math.max(
+
+          2,
+
+          Math.round(
+
+            TOTAL_WIDTH -
+
+            visualLen -
+
+            right.length
+
+          )
+
+        );
+
+
+      let dots =
+        ".".repeat(
+          dotsCount
+        );
+
+
+      msg +=
+        `${left} ${dots} ${right}\n`;
+
+    }
+  );
+
+
+  let totalLeft =
+    "कुल — TOTAL";
+
+
+  let totalRight =
+    `₹ ${totalFormatted}`;
+
+
+  let totalMatras =
+    totalLeft.match(
+      /[\u093e-\u094f\u0901-\u0903]/g
+    );
+
+
+  let totalVisualLen =
+    totalLeft.length -
+
+    (
+      totalMatras
+
+        ?
+
+        totalMatras.length * 0.5
+
+        :
+
+        0
+    );
+
+
+  let totalDotsCount =
+    Math.max(
+
+      2,
+
+      Math.round(
+
+        TOTAL_WIDTH -
+
+        totalVisualLen -
+
+        totalRight.length
+
+      )
+
+    );
+
+
+  let totalDots =
+    ".".repeat(
+      totalDotsCount
+    );
+
+
+  msg +=
+    `----------------------------\n`;
+
+
+  msg +=
+    `${totalLeft} ${totalDots} ${totalRight}\n`;
+
+
+  msg +=
+    `----------------------------\`\`\`\n\n`;
+
+
+  msg +=
+    `धन्यवाद! फिर पधारें। 🙏`;
+
+
+  const encodedMsg =
+    encodeURIComponent(
+      msg
+    );
+
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i
+      .test(
+        navigator.userAgent
+      );
+
+
+  const waUrl =
+    isMobile
+
+      ?
+
+      `whatsapp://send?phone=${phone}&text=${encodedMsg}`
+
+      :
+
+      `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`;
+
+
+  window.open(
+    waUrl,
+    '_blank'
+  );
+
+}
+
+
+renderParchi();
+
 </script>
 
 </body>
 </html>
+```
