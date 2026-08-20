@@ -322,7 +322,6 @@
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
-  // Web Speech API Configured for Complete Multi-Item Capture
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -405,16 +404,18 @@
 
   const CORRECTIONS = {
     "तुरंत दाल": "तूर दाल", "तुवर दाल": "तूर दाल",
-    "नामक": "नमक", "badam": "बादाम", "jira": "जीरा", "alu": "आलू"
+    "नामक": "नमक", "badam": "बादाम", "jira": "जीरा", "alu": "आलू",
+    "दुनिया की पट्टी": "धनिया पत्ती", "धनिया की पट्टी": "धनिया पत्ती"
   };
 
   const STOP_WORDS = new Set([
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Multi-Item Sequential Parser
+  // Universal Token Scanner (Handles attached ₹, Hindi numbers, Grams & Kilos)
   function processVoiceSmart(text) {
-    let clean = text.replace(/₹/g, ' रुपए ');
+    // 1. Detach and normalize ₹ symbol and Hindi numbers
+    let clean = text.replace(/₹/g, ' ₹ ');
 
     for (let [k, v] of Object.entries(HINDI_NUMS)) {
       clean = clean.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
@@ -433,19 +434,22 @@
 
     for (let i = 0; i < tokens.length; i++) {
       let t = tokens[i];
-      let num = parseFloat(t);
 
-      // Check Quantity: Number + Unit
+      // Clean token of attached symbols
+      let cleanT = t.replace(/[₹,]/g, '').trim();
+      let num = parseFloat(cleanT);
+
+      // Check if it's quantity: Number followed by unit (e.g., 3 किलो)
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
         i++; // skip unit token
       } 
-      // Check Standalone Price / Rate
-      else if (!isNaN(num)) {
+      // Check if token is price (number after ₹ symbol or standalone number)
+      else if (!isNaN(num) && cleanT !== "") {
         let priceVal = num;
 
-        // Skip currency word if immediately after
+        // Skip trailing currency words if present
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
           i++;
         }
@@ -472,14 +476,14 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
-        // Reset buffers for next item in sentence
+        // Reset buffers for next item
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
       } 
       // Name word
       else {
-        if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t)) {
+        if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t) && t !== "₹") {
           currentNameWords.push(t);
         }
       }
