@@ -63,6 +63,8 @@
       align-items: center;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
     .mic-button.listening {
       transform: scale(1.08);
@@ -272,18 +274,18 @@
   <div class="header-title">आवाज़ कैलकुलेटर</div>
   <div class="header-subtitle">बोलिए भाव, बन जाएगी परची</div>
 
-  <!-- One-Tap Mic Button -->
+  <!-- Hold-to-Talk Mic -->
   <div class="mic-wrapper">
-    <div class="mic-button" id="micBtn" onclick="toggleMic()">
+    <div class="mic-button" id="micBtn">
       <svg class="mic-icon" viewBox="0 0 24 24" fill="#FFFFFF">
         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
         <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
       </svg>
     </div>
-    <div class="mic-label" id="micLabel">माइक पर टैप करें और बोलें</div>
+    <div class="mic-label" id="micLabel">दबाकर रखें और बोलें</div>
   </div>
 
-  <div class="transcript-box" id="transcriptBox">"बोलने के लिए माइक दबाएं..."</div>
+  <div class="transcript-box" id="transcriptBox">"दबाकर रखें और बोलना शुरू करें..."</div>
 
   <!-- Digital Parchi Card -->
   <div class="parchi-card">
@@ -324,27 +326,30 @@
 <script>
   let isListening = false;
   let items = [];
-  let finalSpokenText = "";
+  let sessionAccumulator = "";
+  let currentSessionText = "";
   let recognition = null;
 
   const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
+  // Speech Recognition with Auto-Reconnect on Silence Cutoff
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
     recognition.continuous = true;
-    recognition.interimResults = false; // Prevents all real-time duplication loops
+    recognition.interimResults = false;
 
     recognition.onresult = (event) => {
       let str = "";
       for (let i = 0; i < event.results.length; ++i) {
         str += event.results[i][0].transcript + " ";
       }
-      finalSpokenText = str.trim();
-      document.getElementById('transcriptBox').innerText = `"${finalSpokenText}"`;
+      currentSessionText = str.trim();
+      let combined = (sessionAccumulator + " " + currentSessionText).trim();
+      document.getElementById('transcriptBox').innerText = `"${combined}"`;
     };
 
     recognition.onerror = (e) => {
@@ -352,8 +357,13 @@
     };
 
     recognition.onend = () => {
+      // If user is still holding the mic button, auto-restart without cutting off
       if (isListening) {
-        stopMicUI();
+        sessionAccumulator = (sessionAccumulator + " " + currentSessionText).trim();
+        currentSessionText = "";
+        try {
+          recognition.start();
+        } catch(err) {}
       }
     };
   }
@@ -361,46 +371,59 @@
   const micBtn = document.getElementById('micBtn');
   const micLabel = document.getElementById('micLabel');
 
-  function toggleMic() {
-    if (!recognition) {
-      alert("Browser speech recognition not supported.");
-      return;
+  function startHold(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    if (isListening) return;
 
-    if (!isListening) {
-      // Start Recording
-      finalSpokenText = "";
-      isListening = true;
-      micBtn.classList.add('listening');
-      micLabel.innerText = "सुन रहे हैं... (रोकने के लिए फिर टैप करें)";
-      document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
-      try {
-        recognition.start();
-      } catch (err) {
-        console.log(err);
-      }
-    } else {
-      // Stop Recording
-      stopMicUI();
-      try {
-        recognition.stop();
-      } catch (err) {
-        console.log(err);
-      }
+    isListening = true;
+    sessionAccumulator = "";
+    currentSessionText = "";
+    micBtn.classList.add('listening');
+    micLabel.innerText = "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
+    document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
+
+    try {
+      recognition.start();
+    } catch (err) {
+      console.log(err);
     }
   }
 
-  function stopMicUI() {
+  function stopHold(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!isListening) return;
+
     isListening = false;
     micBtn.classList.remove('listening');
-    micLabel.innerText = "माइक पर टैप करें और बोलें";
+    micLabel.innerText = "दबाकर रखें और बोलें";
+
+    try {
+      recognition.stop();
+    } catch (err) {
+      console.log(err);
+    }
 
     setTimeout(() => {
-      if (finalSpokenText && finalSpokenText !== "सुन रहे हैं...") {
-        processVoiceSmart(finalSpokenText);
+      let finalTranscript = (sessionAccumulator + " " + currentSessionText).trim();
+      if (finalTranscript && finalTranscript !== "सुन रहे हैं...") {
+        processVoiceSmart(finalTranscript);
       }
-    }, 300);
+    }, 350);
   }
+
+  // Touch and Mouse Event Listeners with Touch Prevention
+  micBtn.addEventListener('mousedown', startHold);
+  window.addEventListener('mouseup', () => { if (isListening) stopHold(); });
+
+  micBtn.addEventListener('touchstart', startHold, { passive: false });
+  window.addEventListener('touchend', (e) => { if (isListening) stopHold(e); }, { passive: false });
+  window.addEventListener('touchcancel', (e) => { if (isListening) stopHold(e); }, { passive: false });
 
   const HINDI_NUMS = {
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
@@ -420,7 +443,7 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Robust Item Parser Engine
+  // Robust Sequential Parser
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' ₹ ');
 
@@ -444,7 +467,7 @@
       let cleanT = t.replace(/[₹,]/g, '').trim();
       let num = parseFloat(cleanT);
 
-      // Check Quantity: Number + Unit
+      // Check Quantity: Number + Unit (e.g. 3 किलो)
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
@@ -548,8 +571,9 @@
 
   function resetParcha() {
     items = [];
-    finalSpokenText = "";
-    document.getElementById('transcriptBox').innerText = '"बोलने के लिए माइक दबाएं..."';
+    sessionAccumulator = "";
+    currentSessionText = "";
+    document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
     renderParchi();
   }
 
