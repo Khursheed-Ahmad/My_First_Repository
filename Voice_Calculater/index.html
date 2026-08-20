@@ -322,30 +322,30 @@
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
-  // Speech Recognition Setup
+  // Web Speech API Configured for Complete Multi-Item Capture
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
     recognition.onresult = (event) => {
-      // Fix: Get only the single clean final transcript (no concatenating loops)
-      if (event.results && event.results.length > 0) {
-        currentTranscript = event.results[event.results.length - 1][0].transcript.trim();
-        document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
+      let finalStr = "";
+      let interimStr = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalStr += event.results[i][0].transcript + " ";
+        } else {
+          interimStr += event.results[i][0].transcript;
+        }
       }
+      currentTranscript = (finalStr + interimStr).trim();
+      document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
     };
 
     recognition.onerror = (e) => {
       console.log("Speech Error:", e.error);
-    };
-
-    recognition.onend = () => {
-      if (isListening) {
-        try { recognition.start(); } catch(err) {}
-      }
     };
   }
 
@@ -382,12 +382,11 @@
       console.log(err);
     }
 
-    // Process once after mic is released
     setTimeout(() => {
       if (currentTranscript && currentTranscript !== "सुन रहे हैं...") {
         processVoiceSmart(currentTranscript);
       }
-    }, 350);
+    }, 400);
   }
 
   micBtn.addEventListener('mousedown', startRecording);
@@ -413,7 +412,7 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Clean Linear Scanner
+  // Multi-Item Sequential Parser
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' रुपए ');
 
@@ -436,22 +435,24 @@
       let t = tokens[i];
       let num = parseFloat(t);
 
-      // Quantity check (Number + Unit)
+      // Check Quantity: Number + Unit
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
         i++; // skip unit token
       } 
-      // Price Check (Standalone Number)
+      // Check Standalone Price / Rate
       else if (!isNaN(num)) {
         let priceVal = num;
 
+        // Skip currency word if immediately after
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
           i++;
         }
 
         let name = currentNameWords.join(' ').trim() || "सामान";
 
+        // Calculation
         let finalPrice = priceVal;
         if (currentQty && priceVal > 0) {
           if (currentQty.includes("ग्राम") || currentQty.includes("gm")) {
@@ -471,12 +472,12 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
-        // Reset buffers
+        // Reset buffers for next item in sentence
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
       } 
-      // Name Word
+      // Name word
       else {
         if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t)) {
           currentNameWords.push(t);
