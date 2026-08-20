@@ -315,36 +315,42 @@
 <script>
   let isListening = false;
   let items = [];
-  let currentTranscript = "";
+  let speechSegments = [];
   let recognition = null;
 
   const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
+  // Single Segment Engine (Completely Eliminates Duplication Loop)
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      let finalStr = "";
-      let interimStr = "";
-      for (let i = 0; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalStr += event.results[i][0].transcript + " ";
-        } else {
-          interimStr += event.results[i][0].transcript;
+      if (event.results && event.results.length > 0) {
+        let text = event.results[0][0].transcript.trim();
+        if (text) {
+          speechSegments.push(text);
+          document.getElementById('transcriptBox').innerText = `"${speechSegments.join(' ')}"`;
         }
       }
-      currentTranscript = (finalStr + interimStr).trim();
-      document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
     };
 
     recognition.onerror = (e) => {
       console.log("Speech Error:", e.error);
+    };
+
+    recognition.onend = () => {
+      // If user is still holding the mic button, keep recording new segment
+      if (isListening) {
+        try {
+          recognition.start();
+        } catch(err) {}
+      }
     };
   }
 
@@ -354,7 +360,7 @@
     if (e) e.preventDefault();
     if (isListening) return;
 
-    currentTranscript = "";
+    speechSegments = [];
     isListening = true;
     micBtn.classList.add('listening');
     document.getElementById('micLabel').innerText = "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
@@ -382,8 +388,9 @@
     }
 
     setTimeout(() => {
-      if (currentTranscript && currentTranscript !== "सुन रहे हैं...") {
-        processVoiceSmart(currentTranscript);
+      let fullText = speechSegments.join(' ').trim();
+      if (fullText && fullText !== "सुन रहे हैं...") {
+        processVoiceSmart(fullText);
       }
     }, 400);
   }
@@ -412,9 +419,8 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Universal Token Scanner (Handles attached ₹, Hindi numbers, Grams & Kilos)
+  // Accurate Parser Engine
   function processVoiceSmart(text) {
-    // 1. Detach and normalize ₹ symbol and Hindi numbers
     let clean = text.replace(/₹/g, ' ₹ ');
 
     for (let [k, v] of Object.entries(HINDI_NUMS)) {
@@ -434,29 +440,25 @@
 
     for (let i = 0; i < tokens.length; i++) {
       let t = tokens[i];
-
-      // Clean token of attached symbols
       let cleanT = t.replace(/[₹,]/g, '').trim();
       let num = parseFloat(cleanT);
 
-      // Check if it's quantity: Number followed by unit (e.g., 3 किलो)
+      // Check Quantity: Number + Unit
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
         i++; // skip unit token
       } 
-      // Check if token is price (number after ₹ symbol or standalone number)
+      // Check Standalone Price / Rate
       else if (!isNaN(num) && cleanT !== "") {
         let priceVal = num;
 
-        // Skip trailing currency words if present
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
           i++;
         }
 
         let name = currentNameWords.join(' ').trim() || "सामान";
 
-        // Calculation
         let finalPrice = priceVal;
         if (currentQty && priceVal > 0) {
           if (currentQty.includes("ग्राम") || currentQty.includes("gm")) {
@@ -476,7 +478,6 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
-        // Reset buffers for next item
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
@@ -489,7 +490,6 @@
       }
     }
 
-    // Trailing item without price
     if (currentNameWords.length > 0) {
       parsedList.push({
         item: currentNameWords.join(' ').trim(),
@@ -547,7 +547,7 @@
 
   function resetParcha() {
     items = [];
-    currentTranscript = "";
+    speechSegments = [];
     document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
     renderParchi();
   }
@@ -566,7 +566,7 @@
     renderParchi();
   }
 
-  // Exact Right-Aligned Monospace WhatsApp Delivery
+  // Exact Right-Aligned WhatsApp Delivery
   function sendToWhatsApp() {
     if (items.length === 0) {
       alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
