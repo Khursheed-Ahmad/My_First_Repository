@@ -29,7 +29,6 @@
       align-items: center;
     }
 
-    /* Header */
     .header-title {
       color: #FFFFFF;
       font-size: 28px;
@@ -45,7 +44,6 @@
       margin-bottom: 24px;
     }
 
-    /* Push-to-Talk Mic */
     .mic-wrapper {
       display: flex;
       flex-direction: column;
@@ -85,7 +83,6 @@
       margin-top: 10px;
     }
 
-    /* Live Speech Box */
     .transcript-box {
       width: 100%;
       background-color: #0B1D16;
@@ -102,7 +99,6 @@
       line-height: 1.4;
     }
 
-    /* Digital Parchi Card */
     .parchi-card {
       width: 100%;
       background-color: #F8EEDB;
@@ -129,7 +125,6 @@
       margin: 12px 0;
     }
 
-    /* Items List */
     .items-container {
       list-style: none;
       display: flex;
@@ -182,7 +177,6 @@
       user-select: none;
     }
 
-    /* Total Section */
     .total-section {
       display: flex;
       justify-content: space-between;
@@ -210,7 +204,6 @@
       margin-bottom: 20px;
     }
 
-    /* WhatsApp Button */
     .btn-whatsapp {
       width: 100%;
       background-color: #25D366;
@@ -309,7 +302,7 @@
 
   <div class="actions-grid">
     <button class="btn-action" onclick="resetParcha()">
-      <span>🧾</span> नया परcha
+      <span>🧾</span> नया परचा
     </button>
     <button class="btn-action" onclick="manualTypeItem()">
       <span>⌨️</span> टाइप करें
@@ -329,25 +322,30 @@
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
+  // Speech Recognition Setup
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      let finalStr = "";
-      for (let i = 0; i < event.results.length; ++i) {
-        finalStr += event.results[i][0].transcript + " ";
+      // Fix: Get only the single clean final transcript (no concatenating loops)
+      if (event.results && event.results.length > 0) {
+        currentTranscript = event.results[event.results.length - 1][0].transcript.trim();
+        document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
       }
-      currentTranscript = finalStr.trim();
-      document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
-      // NOTE: processVoiceSmart is NOT called here so list never builds while holding!
     };
 
     recognition.onerror = (e) => {
       console.log("Speech Error:", e.error);
+    };
+
+    recognition.onend = () => {
+      if (isListening) {
+        try { recognition.start(); } catch(err) {}
+      }
     };
   }
 
@@ -384,12 +382,12 @@
       console.log(err);
     }
 
-    // List generates ONLY after releasing the mic button
+    // Process once after mic is released
     setTimeout(() => {
-      if (currentTranscript.trim()) {
+      if (currentTranscript && currentTranscript !== "सुन रहे हैं...") {
         processVoiceSmart(currentTranscript);
       }
-    }, 300);
+    }, 350);
   }
 
   micBtn.addEventListener('mousedown', startRecording);
@@ -415,6 +413,7 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
+  // Clean Linear Scanner
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' रुपए ');
 
@@ -437,11 +436,14 @@
       let t = tokens[i];
       let num = parseFloat(t);
 
+      // Quantity check (Number + Unit)
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
-        i++;
-      } else if (!isNaN(num)) {
+        i++; // skip unit token
+      } 
+      // Price Check (Standalone Number)
+      else if (!isNaN(num)) {
         let priceVal = num;
 
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
@@ -469,16 +471,20 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
+        // Reset buffers
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
-      } else {
+      } 
+      // Name Word
+      else {
         if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t)) {
           currentNameWords.push(t);
         }
       }
     }
 
+    // Trailing item without price
     if (currentNameWords.length > 0) {
       parsedList.push({
         item: currentNameWords.join(' ').trim(),
@@ -536,6 +542,7 @@
 
   function resetParcha() {
     items = [];
+    currentTranscript = "";
     document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
     renderParchi();
   }
