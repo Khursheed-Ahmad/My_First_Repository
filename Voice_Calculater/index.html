@@ -45,7 +45,7 @@
       margin-bottom: 24px;
     }
 
-    /* Mic Button Area */
+    /* Mic Button */
     .mic-wrapper {
       display: flex;
       flex-direction: column;
@@ -85,7 +85,7 @@
       margin-top: 10px;
     }
 
-    /* Real-time Voice Box */
+    /* Transcript Box */
     .transcript-box {
       width: 100%;
       background-color: #0B1D16;
@@ -129,7 +129,7 @@
       margin: 12px 0;
     }
 
-    /* Items Container */
+    /* Items List */
     .items-container {
       list-style: none;
       display: flex;
@@ -201,7 +201,6 @@
       color: #BE3A29;
     }
 
-    /* Receipt Zigzag Bottom Pattern */
     .zigzag-bottom {
       width: 100%;
       height: 14px;
@@ -235,7 +234,6 @@
       background-color: #20BA5A;
     }
 
-    /* Secondary Action Buttons */
     .actions-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -275,7 +273,6 @@
   <div class="header-title">आवाज़ कैलकुलेटर</div>
   <div class="header-subtitle">बोलिए भाव, बन जाएगी परची</div>
 
-  <!-- Mic Push-to-Talk -->
   <div class="mic-wrapper">
     <div class="mic-button" id="micBtn">
       <svg class="mic-icon" viewBox="0 0 24 24" fill="#FFFFFF">
@@ -288,7 +285,6 @@
 
   <div class="transcript-box" id="transcriptBox">"दबाकर रखें और बोलना शुरू करें..."</div>
 
-  <!-- Digital Parchi -->
   <div class="parchi-card">
     <div class="parchi-title">॥ डिजिटल परची ॥</div>
     <div class="parchi-date" id="currentDate"></div>
@@ -304,7 +300,6 @@
   </div>
   <div class="zigzag-bottom"></div>
 
-  <!-- WhatsApp Button -->
   <button class="btn-whatsapp" onclick="sendToWhatsApp()">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
       <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
@@ -416,10 +411,11 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Accurate Voice Parser with Paisa / Decimal Preservation
+  // Robust Kirana Voice Parser
   function processVoiceSmart(text) {
-    let cleanText = text.replace(/₹/g, ' रुपए ');
+    let cleanText = text;
 
+    // 1. Normalize Hindi Spoken Numbers
     for (let [k, v] of Object.entries(HINDI_NUMS)) {
       cleanText = cleanText.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
     }
@@ -427,58 +423,70 @@
       cleanText = cleanText.replace(new RegExp(k, 'gi'), v);
     }
 
-    let splitRegex = /(?<=\d+(?:\.\d+)?\s*(?:रुपए|रुपये|रु|rs|rupees)?\s*(?:का|की|के))\s+|(?<=\d+(?:\.\d+)?)\s*(?:रुपए|रुपये|रु|rs|rupees)\s*(?:का|की|के)?\s*|\b(?:aur|और|,)\b/i;
-    let rawBlocks = cleanText.split(splitRegex);
+    // 2. Mark Explicit Price Endings (₹20, 20 रुपये, 20rs etc.)
+    cleanText = cleanText.replace(/₹\s*(\d+(?:\.\d+)?)/g, ' PRICE_$1 ');
+    cleanText = cleanText.replace(/(\d+(?:\.\d+)?)\s*(?:रुपए|रुपये|रु|rs|rupees)\b/gi, ' PRICE_$1 ');
 
+    // 3. Fallback: If price is followed by connector
+    cleanText = cleanText.replace(/(\d+(?:\.\d+)?)\s*(?:का|की|के)\b/gi, ' PRICE_$1 ');
+
+    // Split items by PRICE token or 'और'
+    let parts = cleanText.split(/PRICE_/i);
     let parsedList = [];
 
-    rawBlocks.forEach(block => {
-      block = block.trim();
-      if (!block) return;
+    for (let i = 0; i < parts.length - 1; i++) {
+      let currentItemText = parts[i].trim();
+      let nextPricePart = parts[i + 1].trim();
 
-      let qtyMatch = block.match(/(\d+(?:\.\d+)?)\s*(किलो|kg|kilo|ग्राम|gm|gram|लीटर|ltr|पैकेट|packet|पीस|दर्जन)/i);
+      // Extract price from start of next chunk
+      let priceMatch = nextPricePart.match(/^(\d+(?:\.\d+)?)/);
+      if (!priceMatch) continue;
+
+      let numVal = parseFloat(priceMatch[1]);
+
+      // Remove unwanted leftover words
+      currentItemText = currentItemText.replace(/\b(?:aur|और|,)\b/gi, ' ').trim();
+
+      // Extract quantity and unit
+      let qtyMatch = currentItemText.match(/(\d+(?:\.\d+)?)\s*(किलो|kg|kilo|लीटर|ltr|दर्जन|पैकेट|packet|पीस|ग्राम|gm|gram)/i);
       let qtyVal = 1;
       let qtyStr = "";
-      let withoutQty = block;
+      let withoutQty = currentItemText;
 
       if (qtyMatch) {
         qtyVal = parseFloat(qtyMatch[1]);
-        qtyStr = `${qtyVal} ${qtyMatch[2]}`;
+        let unit = qtyMatch[2].toLowerCase();
+        qtyStr = `${qtyVal} ${unit}`;
         withoutQty = withoutQty.replace(qtyMatch[0], ' ');
       }
 
-      let numbers = withoutQty.match(/\b\d+(?:\.\d+)?\b/g);
-      let numVal = numbers ? parseFloat(numbers[numbers.length - 1]) : 0;
-
-      if (numVal === 0 && !qtyStr) return;
-
+      // Calculation logic
       let finalPrice = numVal;
       if (qtyMatch && numVal > 0) {
         if (qtyStr.includes("ग्राम") || qtyStr.includes("gm")) {
-          if (numVal >= 5) {
-            finalPrice = numVal;
-          } else {
+          if (numVal >= 100) {
             finalPrice = (qtyVal / 1000) * numVal;
+          } else {
+            finalPrice = numVal;
           }
-        } else if (qtyStr.includes("किलो") && numVal < 20) {
-          finalPrice = qtyVal * numVal;
         } else {
-          finalPrice = numVal;
+          // Kilo, Liter, Darjan, Packet -> Multiply
+          finalPrice = qtyVal * numVal;
         }
       }
 
-      let nameOnly = withoutQty.replace(/\b\d+(?:\.\d+)?\b/g, ' ');
-      let words = nameOnly.split(/\s+/).filter(w => !STOP_WORDS.has(w.toLowerCase()) && w.length > 0);
-      let finalName = words.join(' ').trim() || "सामान";
+      // Clean item name
+      let words = withoutQty.split(/\s+/).filter(w => !STOP_WORDS.has(w.toLowerCase()) && w.length > 0 && isNaN(w));
+      let finalName = words.join(' ').trim();
 
-      let cleanPrice = parseFloat(finalPrice.toFixed(2));
-
-      parsedList.push({
-        item: finalName,
-        quantity: qtyStr,
-        price: cleanPrice
-      });
-    });
+      if (finalName || qtyStr) {
+        parsedList.push({
+          item: finalName || "सामान",
+          quantity: qtyStr,
+          price: parseFloat(finalPrice.toFixed(2))
+        });
+      }
+    }
 
     if (parsedList.length > 0) {
       items = parsedList;
@@ -547,7 +555,7 @@
     renderParchi();
   }
 
-  // Right-Aligned Column WhatsApp Delivery
+  // Exact Right-Aligned Monospace WhatsApp Delivery
   function sendToWhatsApp() {
     if (items.length === 0) {
       alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
@@ -562,7 +570,7 @@
     if (phone.length === 10) {
       phone = "91" + phone;
     } else if (phone.length === 12 && phone.startsWith("91")) {
-      // already valid
+      // Valid
     } else {
       alert("कृपया सही 10 अंकों का मोबाइल नंबर डालें।");
       return;
