@@ -323,33 +323,30 @@
 <script>
   let isListening = false;
   let items = [];
-  let segmentsMap = {};
+  let capturedPhrases = []; // Strictly non-duplicating segment accumulator
   let recognition = null;
 
   const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
+  // Single-Chunk Engine (Guarantees zero repeat loops in Mobile Chrome)
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        let chunk = event.results[i][0].transcript.trim();
-        segmentsMap[i] = chunk;
+      if (event.results && event.results.length > 0) {
+        let chunk = event.results[0][0].transcript.trim();
+        // Avoid adding the exact same duplicate string back-to-back
+        if (chunk && (capturedPhrases.length === 0 || capturedPhrases[capturedPhrases.length - 1] !== chunk)) {
+          capturedPhrases.push(chunk);
+          document.getElementById('transcriptBox').innerText = `"${capturedPhrases.join(' ')}"`;
+        }
       }
-
-      let liveText = Object.keys(segmentsMap)
-        .sort((a, b) => a - b)
-        .map(k => segmentsMap[k])
-        .join(' ')
-        .trim();
-
-      document.getElementById('transcriptBox').innerText = `"${liveText}"`;
     };
 
     recognition.onerror = (e) => {
@@ -357,7 +354,7 @@
     };
 
     recognition.onend = () => {
-      // STRICT: Agar user ne abhi bhi mic pakda hua hai, toh sirf restart karega, LIST NAI BANAEYGA
+      // If mic is still held down, seamlessly restart for the next item
       if (isListening) {
         try {
           recognition.start();
@@ -377,7 +374,7 @@
     if (isListening) return;
 
     isListening = true;
-    segmentsMap = {};
+    capturedPhrases = [];
     micBtn.classList.add('listening');
     micLabel.innerText = "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
     document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
@@ -396,7 +393,6 @@
     }
     if (!isListening) return;
 
-    // Mic chhoda gaya
     isListening = false;
     micBtn.classList.remove('listening');
     micLabel.innerText = "दबाकर रखें और बोलें";
@@ -407,18 +403,13 @@
       console.log(err);
     }
 
-    // List SIRF YAHAN GENERATE HOGI (Mic release hone ke 400ms baad)
+    // List generates ONLY on finger release
     setTimeout(() => {
-      let fullSentence = Object.keys(segmentsMap)
-        .sort((a, b) => a - b)
-        .map(k => segmentsMap[k])
-        .join(' ')
-        .trim();
-
-      if (fullSentence && fullSentence !== "सुन रहे हैं...") {
-        processVoiceSmart(fullSentence);
+      let finalSentence = capturedPhrases.join(' ').trim();
+      if (finalSentence && finalSentence !== "सुन रहे हैं...") {
+        processVoiceSmart(finalSentence);
       }
-    }, 400);
+    }, 350);
   }
 
   micBtn.addEventListener('mousedown', startHold);
@@ -462,7 +453,7 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Accurate Parser Engine
+  // Clean Sequential Multi-Item Parser
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' ₹ ');
 
@@ -487,14 +478,14 @@
       let cleanT = t.replace(/[₹,]/g, '').trim();
       let num = parseFloat(cleanT);
 
-      // Check Quantity: Number + Unit (e.g. 3 किलो)
+      // 1. Quantity Detection
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
         i += 2;
         continue;
       } 
-      // Check Standalone Price / Rate
+      // 2. Price / Rate Detection
       else if (!isNaN(num) && cleanT !== "") {
         let priceVal = num;
 
@@ -528,7 +519,7 @@
         currentQty = "";
         currentQtyVal = 1;
       } 
-      // Item Name Word
+      // 3. Name Word
       else {
         if (t !== "₹") {
           currentNameWords.push(t);
@@ -595,7 +586,7 @@
 
   function resetParcha() {
     items = [];
-    segmentsMap = {};
+    capturedPhrases = [];
     document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
     renderParchi();
   }
