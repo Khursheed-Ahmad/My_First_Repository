@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>आवाज़ कैलकुलेटर</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #142E24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 10px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Header */
+    .header-title {
+      color: #FFFFFF;
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .header-subtitle {
+      color: #B8C7B8;
+      font-size: 15px;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 24px;
+    }
+
+    /* Mic Button Area */
+    .mic-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .mic-button {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #C04134 0%, #7E1E14 100%);
+      border: 4px solid #489AB0;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 2px 6px rgba(255,255,255,0.3);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .mic-button.listening {
+      transform: scale(1.08);
+      background: radial-gradient(circle, #E63929 0%, #A81B0F 100%);
+      border-color: #55D6F2;
+      box-shadow: 0 0 30px rgba(85, 214, 242, 0.8);
+    }
+    .mic-icon {
+      width: 48px;
+      height: 48px;
+      pointer-events: none;
+    }
+    .mic-label {
+      color: #E6EAE6;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    /* Real-time Voice Box */
+    .transcript-box {
+      width: 100%;
+      background-color: #0B1D16;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #FFFFFF;
+      font-size: 15px;
+      text-align: center;
+      margin-bottom: 20px;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.4;
+    }
+
+    /* Digital Parchi Card */
+    .parchi-card {
+      width: 100%;
+      background-color: #F8EEDB;
+      border-radius: 12px 12px 0 0;
+      padding: 20px 20px 10px 20px;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .parchi-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #242B24;
+    }
+    .parchi-date {
+      text-align: center;
+      font-size: 13px;
+      color: #274D5A;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+    .receipt-divider {
+      border-bottom: 2px dashed #C3B49E;
+      margin: 12px 0;
+    }
+
+    /* Items Container */
+    .items-container {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: bold;
+      color: #1A1A1A;
+    }
+    .item-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .dotted-lead {
+      flex-grow: 1;
+      border-bottom: 1.5px dotted #B9AA94;
+      margin: 0 8px;
+      height: 12px;
+    }
+    .item-price-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .currency-symbol {
+      color: #262626;
+      font-weight: normal;
+    }
+    .item-price-val {
+      min-width: 35px;
+      text-align: right;
+      cursor: pointer;
+    }
+    .delete-item-btn {
+      color: #C07065;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: normal;
+      user-select: none;
+    }
+
+    /* Total Section */
+    .total-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-bottom: 10px;
+    }
+    .total-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #8C3122;
+    }
+    .total-amount {
+      font-size: 28px;
+      font-weight: 900;
+      color: #BE3A29;
+    }
+
+    /* Receipt Zigzag Bottom Pattern */
+    .zigzag-bottom {
+      width: 100%;
+      height: 14px;
+      background: radial-gradient(circle, #F8EEDB 8px, transparent 0);
+      background-size: 20px 20px;
+      background-position: 0 -6px;
+      margin-bottom: 20px;
+    }
+
+    /* WhatsApp Button */
+    .btn-whatsapp {
+      width: 100%;
+      background-color: #25D366;
+      border: none;
+      border-radius: 8px;
+      color: #FFFFFF;
+      padding: 13px;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+      transition: transform 0.1s ease, background-color 0.15s ease;
+    }
+    .btn-whatsapp:active {
+      transform: scale(0.98);
+      background-color: #20BA5A;
+    }
+
+    /* Secondary Action Buttons */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    .btn-action {
+      background-color: transparent;
+      border: 1px solid #335948;
+      border-radius: 8px;
+      color: #DDE5DD;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-action:active {
+      background-color: #1F4535;
+    }
+
+    .footer-help-text {
+      color: #8A9E8D;
+      font-size: 13px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header-title">आवाज़ कैलकुलेटर</div>
+  <div class="header-subtitle">बोलिए भाव, बन जाएगी परची</div>
+
+  <!-- Mic Push-to-Talk -->
+  <div class="mic-wrapper">
+    <div class="mic-button" id="micBtn">
+      <svg class="mic-icon" viewBox="0 0 24 24" fill="#FFFFFF">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+      </svg>
+    </div>
+    <div class="mic-label" id="micLabel">दबाकर रखें और बोलें</div>
+  </div>
+
+  <div class="transcript-box" id="transcriptBox">"दबाकर रखें और बोलना शुरू करें..."</div>
+
+  <!-- Digital Parchi -->
+  <div class="parchi-card">
+    <div class="parchi-title">॥ डिजिटल परची ॥</div>
+    <div class="parchi-date" id="currentDate"></div>
+    <div class="receipt-divider"></div>
+
+    <ul class="items-container" id="itemsList"></ul>
+
+    <div class="receipt-divider"></div>
+    <div class="total-section">
+      <div class="total-title">कुल — TOTAL</div>
+      <div class="total-amount" id="totalAmount">₹0</div>
+    </div>
+  </div>
+  <div class="zigzag-bottom"></div>
+
+  <!-- WhatsApp Button -->
+  <button class="btn-whatsapp" onclick="sendToWhatsApp()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
+      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+    </svg>
+    WhatsApp पर भेजें
+  </button>
+
+  <div class="actions-grid">
+    <button class="btn-action" onclick="resetParcha()">
+      <span>🧾</span> नया परचा
+    </button>
+    <button class="btn-action" onclick="manualTypeItem()">
+      <span>⌨️</span> टाइप करें
+    </button>
+  </div>
+
+  <div class="footer-help-text">रकम पर टैप कर के ठीक भी कर सकते हैं</div>
+</div>
+
+<script>
+  let isListening = false;
+  let items = [];
+  let currentTranscript = "";
+  let recognition;
+
+  const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+  const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
+  document.getElementById('currentDate').innerText = formattedDate;
+
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let finalStr = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        finalStr += event.results[i][0].transcript + " ";
+      }
+      currentTranscript = finalStr.trim();
+      document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
+    };
+
+    recognition.onerror = (e) => {
+      console.log("Speech Error:", e.error);
+    };
+  }
+
+  const micBtn = document.getElementById('micBtn');
+
+  function startRecording(e) {
+    if (e) e.preventDefault();
+    if (isListening) return;
+
+    currentTranscript = "";
+    isListening = true;
+    micBtn.classList.add('listening');
+    document.getElementById('micLabel').innerText = "सुन रहे हैं... (छोड़ें तो परची बनेगी)";
+    document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
+
+    try {
+      recognition.start();
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  function stopRecording(e) {
+    if (e) e.preventDefault();
+    if (!isListening) return;
+
+    isListening = false;
+    micBtn.classList.remove('listening');
+    document.getElementById('micLabel').innerText = "दबाकर रखें और बोलें";
+
+    try {
+      recognition.stop();
+    } catch (err) {
+      console.log(err);
+    }
+
+    setTimeout(() => {
+      if (currentTranscript.trim()) {
+        processVoiceSmart(currentTranscript);
+      }
+    }, 400);
+  }
+
+  micBtn.addEventListener('mousedown', startRecording);
+  window.addEventListener('mouseup', () => { if (isListening) stopRecording(); });
+  micBtn.addEventListener('touchstart', startRecording, { passive: false });
+  window.addEventListener('touchend', () => { if (isListening) stopRecording(); });
+  window.addEventListener('touchcancel', () => { if (isListening) stopRecording(); });
+
+  const HINDI_NUMS = {
+    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
+    "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+    "बीस": 20, "तीस": 30, "चालीस": 40, "पचास": 50, "सौ": 100
+  };
+
+  const CORRECTIONS = {
+    "तुरंत दाल": "तूर दाल", "तुवर दाल": "तूर दाल",
+    "नामक": "नमक", "badam": "बादाम", "jira": "जीरा", "alu": "आलू"
+  };
+
+  const STOP_WORDS = new Set([
+    "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
+  ]);
+
+  // Accurate Voice Parser with Paisa / Decimal Preservation
+  function processVoiceSmart(text) {
+    let cleanText = text.replace(/₹/g, ' रुपए ');
+
+    for (let [k, v] of Object.entries(HINDI_NUMS)) {
+      cleanText = cleanText.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
+    }
+    for (let [k, v] of Object.entries(CORRECTIONS)) {
+      cleanText = cleanText.replace(new RegExp(k, 'gi'), v);
+    }
+
+    let splitRegex = /(?<=\d+(?:\.\d+)?\s*(?:रुपए|रुपये|रु|rs|rupees)?\s*(?:का|की|के))\s+|(?<=\d+(?:\.\d+)?)\s*(?:रुपए|रुपये|रु|rs|rupees)\s*(?:का|की|के)?\s*|\b(?:aur|और|,)\b/i;
+    let rawBlocks = cleanText.split(splitRegex);
+
+    let parsedList = [];
+
+    rawBlocks.forEach(block => {
+      block = block.trim();
+      if (!block) return;
+
+      let qtyMatch = block.match(/(\d+(?:\.\d+)?)\s*(किलो|kg|kilo|ग्राम|gm|gram|लीटर|ltr|पैकेट|packet|पीस|दर्जन)/i);
+      let qtyVal = 1;
+      let qtyStr = "";
+      let withoutQty = block;
+
+      if (qtyMatch) {
+        qtyVal = parseFloat(qtyMatch[1]);
+        qtyStr = `${qtyVal} ${qtyMatch[2]}`;
+        withoutQty = withoutQty.replace(qtyMatch[0], ' ');
+      }
+
+      let numbers = withoutQty.match(/\b\d+(?:\.\d+)?\b/g);
+      let numVal = numbers ? parseFloat(numbers[numbers.length - 1]) : 0;
+
+      if (numVal === 0 && !qtyStr) return;
+
+      let finalPrice = numVal;
+      if (qtyMatch && numVal > 0) {
+        if (qtyStr.includes("ग्राम") || qtyStr.includes("gm")) {
+          if (numVal >= 5) {
+            finalPrice = numVal;
+          } else {
+            finalPrice = (qtyVal / 1000) * numVal;
+          }
+        } else if (qtyStr.includes("किलो") && numVal < 20) {
+          finalPrice = qtyVal * numVal;
+        } else {
+          finalPrice = numVal;
+        }
+      }
+
+      let nameOnly = withoutQty.replace(/\b\d+(?:\.\d+)?\b/g, ' ');
+      let words = nameOnly.split(/\s+/).filter(w => !STOP_WORDS.has(w.toLowerCase()) && w.length > 0);
+      let finalName = words.join(' ').trim() || "सामान";
+
+      let cleanPrice = parseFloat(finalPrice.toFixed(2));
+
+      parsedList.push({
+        item: finalName,
+        quantity: qtyStr,
+        price: cleanPrice
+      });
+    });
+
+    if (parsedList.length > 0) {
+      items = parsedList;
+      renderParchi();
+    }
+  }
+
+  function renderParchi() {
+    const listEl = document.getElementById('itemsList');
+    listEl.innerHTML = '';
+    let total = 0;
+
+    items.forEach((it, idx) => {
+      total += it.price;
+      const li = document.createElement('li');
+      li.className = 'item-row';
+      li.innerHTML = `
+        <div class="item-name">
+          <span>${it.item}</span>
+          ${it.quantity ? `<span style="font-size:13px; font-weight:normal; color:#4A5568; margin-left:4px;">(${it.quantity})</span>` : ''}
+        </div>
+        <div class="dotted-lead"></div>
+        <div class="item-price-section">
+          <span class="currency-symbol">₹</span>
+          <span class="item-price-val" onclick="editPrice(${idx})">${it.price}</span>
+          <span class="delete-item-btn" onclick="deleteItem(${idx})">✕</span>
+        </div>
+      `;
+      listEl.appendChild(li);
+    });
+
+    let formattedTotal = parseFloat(total.toFixed(2));
+    document.getElementById('totalAmount').innerText = `₹${formattedTotal}`;
+  }
+
+  function deleteItem(idx) {
+    items.splice(idx, 1);
+    renderParchi();
+  }
+
+  function editPrice(idx) {
+    const newPrice = prompt("नया भाव / Price दर्ज करें:", items[idx].price);
+    if (newPrice !== null && !isNaN(newPrice) && newPrice.trim() !== "") {
+      items[idx].price = parseFloat(parseFloat(newPrice).toFixed(2));
+      renderParchi();
+    }
+  }
+
+  function resetParcha() {
+    items = [];
+    document.getElementById('transcriptBox').innerText = '"दबाकर रखें और बोलना शुरू करें..."';
+    renderParchi();
+  }
+
+  function manualTypeItem() {
+    const name = prompt("सामान का नाम:");
+    if (!name) return;
+    const price = prompt("रकम (Price):");
+    if (!price || isNaN(price)) return;
+
+    items.push({
+      item: name,
+      quantity: "",
+      price: parseFloat(parseFloat(price).toFixed(2))
+    });
+    renderParchi();
+  }
+
+  // Right-Aligned Column WhatsApp Delivery
+  function sendToWhatsApp() {
+    if (items.length === 0) {
+      alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
+      return;
+    }
+
+    let phone = prompt("ग्राहक का 10 अंकों का WhatsApp नंबर दर्ज करें:", "");
+    if (!phone) return;
+
+    phone = phone.replace(/\D/g, '');
+
+    if (phone.length === 10) {
+      phone = "91" + phone;
+    } else if (phone.length === 12 && phone.startsWith("91")) {
+      // already valid
+    } else {
+      alert("कृपया सही 10 अंकों का मोबाइल नंबर डालें।");
+      return;
+    }
+
+    let total = items.reduce((sum, it) => sum + it.price, 0);
+    let totalFormatted = parseFloat(total.toFixed(2));
+    const dateStr = document.getElementById('currentDate').innerText;
+
+    let msg = `\`\`\`॥ डिजिटल परची ॥\n`;
+    msg += `${dateStr}\n`;
+    msg += `----------------------------\n`;
+
+    const TOTAL_WIDTH = 28;
+
+    items.forEach((it) => {
+      let cleanItemName = it.item.replace(/\b(भी|का|की|के)\b/gi, '').trim();
+      let qty = it.quantity ? ` (${it.quantity})` : '';
+      let left = `${cleanItemName}${qty}`;
+      let right = `₹ ${it.price}`;
+
+      if (left.length > 18) {
+        left = left.substring(0, 16) + "..";
+      }
+
+      let matras = left.match(/[\u093e-\u094f\u0901-\u0903]/g);
+      let visualLen = left.length - (matras ? matras.length * 0.5 : 0);
+
+      let dotsCount = Math.max(2, Math.round(TOTAL_WIDTH - visualLen - right.length));
+      let dots = ".".repeat(dotsCount);
+
+      msg += `${left} ${dots} ${right}\n`;
+    });
+
+    let totalLeft = "कुल — TOTAL";
+    let totalRight = `₹ ${totalFormatted}`;
+    let totalMatras = totalLeft.match(/[\u093e-\u094f\u0901-\u0903]/g);
+    let totalVisualLen = totalLeft.length - (totalMatras ? totalMatras.length * 0.5 : 0);
+    let totalDotsCount = Math.max(2, Math.round(TOTAL_WIDTH - totalVisualLen - totalRight.length));
+    let totalDots = ".".repeat(totalDotsCount);
+
+    msg += `----------------------------\n`;
+    msg += `${totalLeft} ${totalDots} ${totalRight}\n`;
+    msg += `----------------------------\`\`\`\n\n`;
+    msg += `धन्यवाद! फिर पधारें। 🙏`;
+
+    const encodedMsg = encodeURIComponent(msg);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const waUrl = isMobile 
+      ? `whatsapp://send?phone=${phone}&text=${encodedMsg}` 
+      : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`;
+
+    window.open(waUrl, '_blank');
+  }
+
+  renderParchi();
+</script>
+
+</body>
+</html>
