@@ -323,14 +323,13 @@
 <script>
   let isListening = false;
   let items = [];
-  let segmentsMap = {}; // Index-based segment storage (Prevents drops & duplication)
+  let segmentsMap = {};
   let recognition = null;
 
   const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
-  // Web Speech API with Multi-Segment Continuous Capture
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -340,18 +339,17 @@
 
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        let transcriptChunk = event.results[i][0].transcript.trim();
-        segmentsMap[i] = transcriptChunk;
+        let chunk = event.results[i][0].transcript.trim();
+        segmentsMap[i] = chunk;
       }
 
-      // Combine all spoken segments in chronological order
-      let fullSentence = Object.keys(segmentsMap)
+      let liveText = Object.keys(segmentsMap)
         .sort((a, b) => a - b)
         .map(k => segmentsMap[k])
         .join(' ')
         .trim();
 
-      document.getElementById('transcriptBox').innerText = `"${fullSentence}"`;
+      document.getElementById('transcriptBox').innerText = `"${liveText}"`;
     };
 
     recognition.onerror = (e) => {
@@ -359,6 +357,7 @@
     };
 
     recognition.onend = () => {
+      // STRICT: Agar user ne abhi bhi mic pakda hua hai, toh sirf restart karega, LIST NAI BANAEYGA
       if (isListening) {
         try {
           recognition.start();
@@ -397,6 +396,7 @@
     }
     if (!isListening) return;
 
+    // Mic chhoda gaya
     isListening = false;
     micBtn.classList.remove('listening');
     micLabel.innerText = "दबाकर रखें और बोलें";
@@ -407,7 +407,7 @@
       console.log(err);
     }
 
-    // Process all captured segments together
+    // List SIRF YAHAN GENERATE HOGI (Mic release hone ke 400ms baad)
     setTimeout(() => {
       let fullSentence = Object.keys(segmentsMap)
         .sort((a, b) => a - b)
@@ -418,7 +418,7 @@
       if (fullSentence && fullSentence !== "सुन रहे हैं...") {
         processVoiceSmart(fullSentence);
       }
-    }, 350);
+    }, 400);
   }
 
   micBtn.addEventListener('mousedown', startHold);
@@ -462,7 +462,7 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Universal Scanner (Parses ALL items in sequential order)
+  // Accurate Parser Engine
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' ₹ ');
 
