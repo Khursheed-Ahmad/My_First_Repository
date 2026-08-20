@@ -309,7 +309,7 @@
 
   <div class="actions-grid">
     <button class="btn-action" onclick="resetParcha()">
-      <span>🧾</span> नया परचा
+      <span>🧾</span> नया परcha
     </button>
     <button class="btn-action" onclick="manualTypeItem()">
       <span>⌨️</span> टाइप करें
@@ -343,6 +343,7 @@
       }
       currentTranscript = finalStr.trim();
       document.getElementById('transcriptBox').innerText = `"${currentTranscript}"`;
+      // NOTE: processVoiceSmart is NOT called here so list never builds while holding!
     };
 
     recognition.onerror = (e) => {
@@ -359,7 +360,7 @@
     currentTranscript = "";
     isListening = true;
     micBtn.classList.add('listening');
-    document.getElementById('micLabel').innerText = "सुन रहे हैं... (छोड़ें तो परची बनेगी)";
+    document.getElementById('micLabel').innerText = "सुन रहे हैं... (छोड़ते ही परची बनेगी)";
     document.getElementById('transcriptBox').innerText = "सुन रहे हैं...";
 
     try {
@@ -383,11 +384,12 @@
       console.log(err);
     }
 
+    // List generates ONLY after releasing the mic button
     setTimeout(() => {
       if (currentTranscript.trim()) {
         processVoiceSmart(currentTranscript);
       }
-    }, 500);
+    }, 300);
   }
 
   micBtn.addEventListener('mousedown', startRecording);
@@ -413,7 +415,6 @@
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Universal Token Scanner (Captures ALL spoken items accurately)
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' रुपए ');
 
@@ -436,24 +437,19 @@
       let t = tokens[i];
       let num = parseFloat(t);
 
-      // Check if number is followed by a unit (Quantity)
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
-        i++; // Skip unit token
-      } 
-      // Check if token itself is standalone price or item-ending number
-      else if (!isNaN(num)) {
+        i++;
+      } else if (!isNaN(num)) {
         let priceVal = num;
 
-        // Skip currency word if present immediately after
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
           i++;
         }
 
         let name = currentNameWords.join(' ').trim() || "सामान";
 
-        // Calculation
         let finalPrice = priceVal;
         if (currentQty && priceVal > 0) {
           if (currentQty.includes("ग्राम") || currentQty.includes("gm")) {
@@ -473,20 +469,16 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
-        // Reset buffers for next item
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
-      } 
-      // Word token
-      else {
+      } else {
         if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t)) {
           currentNameWords.push(t);
         }
       }
     }
 
-    // Trailing item without price
     if (currentNameWords.length > 0) {
       parsedList.push({
         item: currentNameWords.join(' ').trim(),
@@ -562,7 +554,7 @@
     renderParchi();
   }
 
-  // Exact Right-Aligned WhatsApp Monospace Delivery
+  // Exact Right-Aligned Monospace WhatsApp Delivery
   function sendToWhatsApp() {
     if (items.length === 0) {
       alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
