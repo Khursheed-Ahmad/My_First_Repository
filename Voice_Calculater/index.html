@@ -44,7 +44,6 @@
       margin-bottom: 24px;
     }
 
-    /* Push-to-Talk Mic */
     .mic-wrapper {
       display: flex;
       flex-direction: column;
@@ -108,7 +107,6 @@
       line-height: 1.4;
     }
 
-    /* Digital Parchi Card */
     .parchi-card {
       width: 100%;
       background-color: #F8EEDB;
@@ -332,7 +330,6 @@
   const formattedDate = new Date().toLocaleDateString('hi-IN', dateOptions);
   document.getElementById('currentDate').innerText = formattedDate;
 
-  // Single-Segment Safe Recognizer
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -355,7 +352,6 @@
     };
 
     recognition.onend = () => {
-      // Auto-restart if user is still holding the button
       if (isListening) {
         try {
           recognition.start();
@@ -404,7 +400,7 @@
       console.log(err);
     }
 
-    // STRICT: Parchee banegi SIRF mic chhodne par
+    // List generates ONLY on release
     setTimeout(() => {
       let fullTranscript = speechSegments.join(' ').trim();
       if (fullTranscript && fullTranscript !== "सुन रहे हैं...") {
@@ -413,7 +409,6 @@
     }, 350);
   }
 
-  // Event Listeners with Touch Prevention
   micBtn.addEventListener('mousedown', startHold);
   window.addEventListener('mouseup', () => { if (isListening) stopHold(); });
 
@@ -426,20 +421,36 @@
     "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
     "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15,
     "सोलह": 16, "सत्रह": 17, "अठारह": 18, "उन्नीस": 19, "बीस": 20,
-    "तीस": 30, "चालीस": 40, "पचास": 50, "साठ": 60, "सत्तर": 70, "अस्सी": 80, "नब्बे": 90, "सौ": 100
+    "इक्कीस": 21, "बाईस": 22, "तेईस": 23, "चौबीस": 24, "पच्चीस": 25,
+    "छब्बीस": 26, "सत्ताईस": 27, "अट्ठाइस": 28, "उनतीस": 29, "तीस": 30,
+    "इकतीस": 31, "बत्तीस": 32, "तैंतीस": 33, "चौंतीस": 34, "पैंतीस": 35,
+    "छत्तीस": 36, "सैंतीस": 37, "अड़तीस": 38, "उनतालीस": 39, "चालीस": 40,
+    "इकतालीस": 41, "बयालीस": 42, "तैंतालीस": 43, "चवालीस": 44, "पैंतालीस": 45,
+    "छियालीस": 46, "सैंतालीस": 47, "अड़तालीस": 48, "उनचास": 49, "पचास": 50,
+    "इक्यावन": 51, "बावन": 52, "तिरेपन": 53, "चौवन": 54, "पचपन": 55,
+    "छप्पन": 56, "सत्तावन": 57, "अट्ठावन": 58, "उनसठ": 59, "साठ": 60,
+    "इकसठ": 61, "बासठ": 62, "तिरेसठ": 63, "चौंसठ": 64, "पैंसठ": 65,
+    "छियासठ": 66, "सरसठ": 67, "अड़सठ": 68, "उनहत्तर": 69, "सत्तर": 70,
+    "इकहत्तर": 71, "बहत्तर": 72, "तिहत्तर": 73, "चौहत्तर": 74, "पचहत्तर": 75,
+    "छिहत्तर": 76, "सतहत्तर": 77, "अठहत्तर": 78, "उन्नासी": 79, "अस्सी": 80,
+    "इक्यासी": 81, "बयासी": 82, "तिरासी": 83, "चौरासी": 84, "पचासी": 85,
+    "छियासी": 86, "सत्तासी": 87, "अट्ठासी": 88, "नवासी": 89, "नब्बे": 90,
+    "इक्यानवे": 91, "बानवे": 92, "तिरानवे": 93, "चौरानवे": 94, "पंचानवे": 95,
+    "छियानवे": 96, "सत्तानवे": 97, "अट्ठानवे": 98, "निन्यानवे": 99, "सौ": 100,
+    "डेढ़": 1.5, "ढाई": 2.5, "आधा": 0.5, "सवा": 1.25, "पौना": 0.75, "पौने": 0.75
   };
 
   const CORRECTIONS = {
     "तुरंत दाल": "तूर दाल", "तुवर दाल": "तूर दाल",
     "नामक": "नमक", "badam": "बादाम", "jira": "जीरा", "alu": "आलू",
-    "दुनिया की पट्टी": "धनिया पत्ती", "धनिया की पट्टी": "धनिया पत्ती"
+    "दुनिया की पट्टी": "धनिया पत्ती", "धनिया की पट्टी": "धनिया पत्ती", "धनिया पत्ती": "धनिया पत्ती"
   };
 
   const STOP_WORDS = new Set([
     "का", "की", "के", "को", "से", "में", "रुपए", "रुपये", "रु", "rs", "rupee", "rupees", "hai", "h", "aur", "और", "bhi", "भी"
   ]);
 
-  // Accurate Parser Engine
+  // Robust Universal Multi-Item Parser
   function processVoiceSmart(text) {
     let clean = text.replace(/₹/g, ' ₹ ');
 
@@ -463,21 +474,31 @@
       let cleanT = t.replace(/[₹,]/g, '').trim();
       let num = parseFloat(cleanT);
 
-      // Check Quantity: Number + Unit
+      // 1. Quantity Detection: Number followed by unit (e.g., "3 किलो")
       if (!isNaN(num) && i + 1 < tokens.length && unitRegex.test(tokens[i + 1])) {
         currentQtyVal = num;
         currentQty = `${num} ${tokens[i + 1]}`;
-        i++; // skip unit token
+        i++; // skip unit
       } 
-      // Check Standalone Price / Rate
+      // 2. Price / Rate Detection (Standalone number)
       else if (!isNaN(num) && cleanT !== "") {
         let priceVal = num;
 
+        // Skip currency word if immediately after
         if (i + 1 < tokens.length && /^(रुपए|रुपये|रु|rs|rupees)$/i.test(tokens[i + 1])) {
           i++;
         }
 
-        let name = currentNameWords.join(' ').trim() || "सामान";
+        // Clean name words (Filter out stop words)
+        let filteredWords = currentNameWords.filter(w => !STOP_WORDS.has(w.toLowerCase()) && !unitRegex.test(w) && w !== "₹");
+        let name = filteredWords.join(' ').trim();
+
+        // Fallback only if no word was spoken at all
+        if (!name && parsedList.length > 0 && !currentQty) {
+          name = "सामान";
+        } else if (!name) {
+          name = "सामान";
+        }
 
         let finalPrice = priceVal;
         if (currentQty && priceVal > 0) {
@@ -498,21 +519,24 @@
           price: parseFloat(finalPrice.toFixed(2))
         });
 
+        // Reset buffers for the next item
         currentNameWords = [];
         currentQty = "";
         currentQtyVal = 1;
       } 
-      // Name word
+      // 3. Name Word Detection
       else {
-        if (!STOP_WORDS.has(t.toLowerCase()) && !unitRegex.test(t) && t !== "₹") {
+        if (t !== "₹") {
           currentNameWords.push(t);
         }
       }
     }
 
-    if (currentNameWords.length > 0) {
+    // Trailing item without price
+    let remainingWords = currentNameWords.filter(w => !STOP_WORDS.has(w.toLowerCase()) && !unitRegex.test(w) && w !== "₹");
+    if (remainingWords.length > 0) {
       parsedList.push({
-        item: currentNameWords.join(' ').trim(),
+        item: remainingWords.join(' ').trim(),
         quantity: currentQty,
         price: 0
       });
@@ -586,7 +610,7 @@
     renderParchi();
   }
 
-  // Exact Right-Aligned WhatsApp Delivery
+  // Right-Aligned WhatsApp Monospace Delivery
   function sendToWhatsApp() {
     if (items.length === 0) {
       alert("परची खाली है! पहले सामान बोलें या दर्ज करें।");
